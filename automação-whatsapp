@@ -1,39 +1,117 @@
 import openpyxl
+import os
 from urllib.parse import quote
 import webbrowser
 from time import sleep
 import pyautogui
+import tkinter as tk
+from tkinter import messagebox, filedialog
+import customtkinter as ctk
 
+    
+def start():
+    global filename, caminho_arquivo
+    with open(caminho_arquivo, 'r') as arquivo:
+        conteudo = arquivo.read()
+        print(conteudo)
+        mensagem2 = conteudo
+    webbrowser.open('https://web.whatsapp.com/')
+    sleep(10)
+    pyautogui.hotkey('ctrl','w')
+    sleep(5)
 
-webbrowser.open('https://web.whatsapp.com/')
-sleep(10)
-pyautogui.hotkey('ctrl','w')
-sleep(5)
+    #Ler planilha e guardar inf
+    workbook = openpyxl.load_workbook(filename)
+    pagina_clientes = workbook['Planilha1']
 
-#Ler planilha e guardar inf
-workbook = openpyxl.load_workbook('testewpp.xlsx')
-pagina_clientes = workbook['Planilha1']
+    #repetição do bot
+    for linha in pagina_clientes.iter_rows(min_row=2):
+        nome = linha[0].value
+        telefone = linha[1].value
+        vencimento = linha[2].value
 
-#repetição do bot
-for linha in pagina_clientes.iter_rows(min_row=2):
-    nome = linha[0].value
-    telefone = linha[1].value
-    vencimento = linha[2].value
+        #mesagem enviada
+        mensagem = f'Ola {nome}, aqui é da empresa XXXX estou entrando em contato para o envio do boleto no vencimento {vencimento.strftime("%d/%m/%Y")}.\n\n{mensagem2}'
 
-    #mesagem enviada
-    mensagem = f'Olá {nome}, estou testando meu bot {vencimento.strftime("%d/%m/%Y")}.'
-
-    #tentiva e relatorio de erro
-    try:
-        link_mensagem_whatsapp = f'https://web.whatsapp.com/send?phone={telefone}&text={quote(mensagem)}'
-        webbrowser.open(link_mensagem_whatsapp)
-        sleep(7)
-        sleep(5)
-        seta = pyautogui.locateCenterOnScreen('seta_2.png')
-        pyautogui.click(seta[0],seta[1])
-        sleep(5)
-        pyautogui.hotkey('ctrl','w')
-        sleep(5)
-    except:
-        print(f'Não foi possivel enviar mensagem para {nome}')
+        #tentiva e relatorio de erro
+        try:
+            link_mensagem_whatsapp = f'https://web.whatsapp.com/send?phone={telefone}&text={quote(mensagem)}'
+            webbrowser.open(link_mensagem_whatsapp)
+            sleep(7)
+            sleep(5)
+            pyautogui.hotkey('enter')
+            sleep(5)
+            pyautogui.hotkey('ctrl','w')
+            sleep(5)
+        except:
+            tk.messagebox.showinfo("erro", f"Não foi possivel enviar mensagem para {nome}")
+            #print(f'Não foi possivel enviar mensagem para {nome}')
         
+            
+app = ctk.CTk()
+ctk.set_appearance_mode("dark")
+app.title("WhatsApp Bot")
+app.geometry("400x250+500+300")
+app.resizable(0,0)
+def theme():
+    if swtVar.get() == 0:
+        ctk.set_appearance_mode("dark")
+        frame.configure(fg_color = "black")
+    if swtVar.get() == 1:
+        ctk.set_appearance_mode("light")
+        frame.configure(fg_color = "white")
+def iniciar():
+    global filename
+    if entry.get() and os.path.exists(filename):
+        print('foi')
+        start()
+    else:
+        tk.messagebox.showinfo("erro", "Arquivo não localizado")
+
+    
+##def bot():
+##    frases = ["Ola", "Meu nome é WAB","Estou aqui para ajudalo","Basta clicar em iniciar e eu farei todo o resto"]
+##    for i in frases:
+##        frase = str([i])
+##        frase = frase.replace("['","")
+##        frase = frase.replace("']","")
+##        print (frase)
+##        label.configure(text = frase)
+##        app.update()
+##        app.after(2500)
+def selecionar_arquivo():
+    global filename
+    tipos_arquivo = [("Planilhas Excel", ".xlsx;.xls")]
+    filename = filedialog.askopenfilename(filetypes=tipos_arquivo)
+    entry_arquivo.set(filename)
+def txt():
+    global caminho_arquivo
+    caminho_arquivo = 'Arquivo.txt'
+    # Abrir o arquivo no Notepad
+    os.startfile(caminho_arquivo)
+filename = None    
+frame = ctk.CTkFrame(app, fg_color = "black")
+frame.pack(padx = 15, pady = 15, side = "top", fill = "both", expand = True)
+
+label = ctk.CTkLabel(frame, text = "Selecione a planilha com os telefones")
+label.pack()
+entry_arquivo = tk.StringVar()
+
+# Criar o Entry para mostrar o caminho do arquivo
+entry = ctk.CTkEntry(frame, textvariable=entry_arquivo, width=250)
+entry.pack(pady=5)
+botao = ctk.CTkButton(frame, text="Selecionar Arquivo", command=selecionar_arquivo)
+botao.pack(pady=5)
+
+btn = ctk.CTkButton(frame, text = "Iniciar", command = iniciar)
+btn.pack()
+
+btn2 = ctk.CTkButton(frame,text="txt para envio", command = txt)
+btn2.pack(pady=5)
+swtVar = tk.IntVar()
+switch = ctk.CTkSwitch(frame,text = "Theme", command = theme,onvalue = 1, offvalue = 0, variable = swtVar)
+switch.pack(pady= 10)
+##app.after(1000)
+##app.update()
+##bot()
+app.mainloop()
